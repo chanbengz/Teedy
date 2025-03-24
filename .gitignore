@@ -16,6 +16,8 @@ teedy-importer-macos
 teedy-importer-win.exe
 docs/*
 !docs/.gitkeep
+target
+data
 
 #macos
 .DS_Store
