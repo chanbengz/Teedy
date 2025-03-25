@@ -505,6 +505,13 @@
     </dependencies>
   </dependencyManagement>
 
+  <distributionManagement>
+    <site>
+      <id> site-fan </id>
+      <url> scp: //localhost:8888 </url>
+    </site>
+  </distributionManagement>
+
   <reporting>
     <plugins>
       <plugin>
