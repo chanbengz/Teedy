@@ -1,0 +1,55 @@
+<?xml version="1.0"?>
+<ruleset name="Custom Metrics Ruleset"
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+    <description>
+        Custom ruleset for measuring specific metrics in Teedy
+    </description>
+
+    <!-- Lines of Code (LoC) -->
+    <rule ref="category/java/design.xml/NcssCount">
+        <properties>
+            <property name="methodReportLevel" value="50"/>
+            <property name="classReportLevel" value="1000"/>
+        </properties>
+    </rule>
+
+    <!-- Cyclomatic Complexity (CC) -->
+    <rule ref="category/java/design.xml/CyclomaticComplexity">
+        <properties>
+            <property name="methodReportLevel" value="10"/>
+            <property name="classReportLevel" value="80"/>
+        </properties>
+    </rule>
+
+    <!-- Weighted Methods per Class (WMC) -->
+    <rule ref="category/java/design.xml/NPathComplexity">
+        <properties>
+            <property name="minimum" value="200"/>
+        </properties>
+    </rule>
+    <rule ref="category/java/design.xml/TooManyMethods">
+        <properties>
+            <property name="maxmethods" value="20"/>
+        </properties>
+    </rule>
+
+    <!-- Coupling Between Objects (CBO) -->
+    <rule ref="category/java/design.xml/CouplingBetweenObjects">
+        <properties>
+            <property name="threshold" value="20"/>
+        </properties>
+    </rule>
+
+    <!-- Lack of Cohesion in Methods (LCOM) -->
+    <rule ref="category/java/design.xml/LawOfDemeter"/>
+    <rule ref="category/java/design.xml/GodClass"/>
+    <rule ref="category/java/design.xml/LoosePackageCoupling">
+        <properties>
+            <property name="packages">
+                <value>com.sismics.docs</value>
+            </property>
+        </properties>
+    </rule>
+</ruleset>
