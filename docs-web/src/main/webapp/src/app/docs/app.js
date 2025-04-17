@@ -513,6 +513,18 @@ angular.module('docs',
   $rootScope.$state = $state;
   $rootScope.$stateParams = $stateParams;
 
+  // Generate and persist a random token for the session if not already present
+  if (!localStorage.randomToken) {
+    // 32-character alphanumeric token
+    var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    var token = '';
+    for (var i = 0; i < 32; i++) {
+      token += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    localStorage.randomToken = token;
+  }
+  $rootScope.randomToken = localStorage.randomToken;
+
   // Fetch the current theme configuration
   $rootScope.appName = '';
   Restangular.one('theme').get().then(function(data) {
