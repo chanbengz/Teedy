@@ -3,7 +3,6 @@ package com.sismics.docs.rest.resource;
 import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
 import com.sismics.docs.core.constant.AclTargetType;
-import com.sismics.docs.core.constant.ConfigType;
 import com.sismics.docs.core.constant.Constants;
 import com.sismics.docs.core.dao.*;
 import com.sismics.docs.core.dao.criteria.GroupCriteria;
@@ -15,7 +14,6 @@ import com.sismics.docs.core.event.FileDeletedAsyncEvent;
 import com.sismics.docs.core.event.PasswordLostEvent;
 import com.sismics.docs.core.model.context.AppContext;
 import com.sismics.docs.core.model.jpa.*;
-import com.sismics.docs.core.util.ConfigUtil;
 import com.sismics.docs.core.util.RoutingUtil;
 import com.sismics.docs.core.util.authentication.AuthenticationUtil;
 import com.sismics.docs.core.util.jpa.SortCriteria;
@@ -39,8 +37,10 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
-
+import java.util.Base64;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -82,31 +82,49 @@ public class UserResource extends BaseResource {
             dao.create(req);
             return Response.ok().entity(Json.createObjectBuilder().add("status", 1).build()).build(); // 1 = pending
         }
+
         String status = req.getStatus();
         int statusNum = 1; // pending
+        JsonObjectBuilder builder = Json.createObjectBuilder();
+
         if ("PENDING".equals(status)) {
             statusNum = 1;
         } else if ("APPROVED".equals(status)) {
             statusNum = 2;
+            // Get the user created for this guest
+            UserDao userDao = new UserDao();
+
+            // Create a more elegant hash of the token using Base64 encoding
+            String tokenHash = Base64.getEncoder().encodeToString(DigestUtils.md5(token.getBytes())).replaceAll("[^a-zA-Z0-9]", "").substring(0, 8);
+            User user = userDao.getActiveByUsername("guest-" + tokenHash);
+            
+            if (user == null) {
+                String password = RandomStringUtils.randomAlphanumeric(12);
+                
+                // Create a new user with a short hash of the guest's token as username
+                user = new User();
+                user.setRoleId(Constants.DEFAULT_USER_ROLE);
+                user.setUsername("guest-" + tokenHash);
+                user.setPassword(password);
+                user.setEmail(token + "@guest.local");
+                user.setStorageQuota(1000000000L); // 1GB default quota
+                user.setOnboarding(true);
+                
+                // Create the user
+                try {
+                    userDao.create(user, "guest-login-request");
+                } catch (Exception e) {
+                    throw new ServerException("UnknownError", "Error creating guest user", e);
+                }
+
+                builder.add("password", password);
+            }
+            builder.add("username", user.getUsername());
         } else if ("REJECTED".equals(status)) {
             statusNum = 3;
         }
-        JsonObjectBuilder builder = Json.createObjectBuilder().add("status", statusNum);
-        if (statusNum == 2) {
-            // Generate a login token for guest
-            UserDao userDao = new UserDao();
-            User user = userDao.getActiveByUsername(Constants.GUEST_USER_ID);
-            if (user != null) {
-                AuthenticationTokenDao authenticationTokenDao = new AuthenticationTokenDao();
-                AuthenticationToken authenticationToken = new AuthenticationToken()
-                    .setUserId(user.getId())
-                    .setLongLasted(false)
-                    .setIp(org.apache.commons.lang3.StringUtils.abbreviate(ip, 45))
-                    .setUserAgent(org.apache.commons.lang3.StringUtils.abbreviate(request.getHeader("user-agent"), 1000));
-                String authToken = authenticationTokenDao.create(authenticationToken);
-                builder.add("auth_token", authToken);
-            }
-        }
+        
+        builder.add("status", statusNum);
         return Response.ok().entity(builder.build()).build();
     }
 
@@ -163,10 +181,16 @@ public class UserResource extends BaseResource {
         checkBaseFunction(BaseFunction.ADMIN);
         String id = json.getString("id", null);
         String status = json.getString("status", null);
-        if (id == null || (!"APPROVED".equals(status) && !"REJECTED".equals(status))) {
+        if (id == null || status == null || (!"APPROVED".equals(status) && !"REJECTED".equals(status))) {
             throw new ClientException("ValidationError", "Invalid id or status");
         }
+        
         GuestLoginRequestDao dao = new GuestLoginRequestDao();
+        GuestLoginRequest request = dao.findById(id);
+        if (request == null) {
+            throw new ClientException("ValidationError", "Guest login request not found");
+        }
+        
         dao.updateStatus(id, status);
         return Response.ok().entity(Json.createObjectBuilder().add("status", "ok").build()).build();
     }

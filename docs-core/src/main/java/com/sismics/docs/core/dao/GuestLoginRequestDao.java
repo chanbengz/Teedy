@@ -39,4 +39,9 @@ public class GuestLoginRequestDao {
         List<GuestLoginRequest> results = query.getResultList();
         return results.isEmpty() ? null : results.get(0);
     }
+
+    public GuestLoginRequest findById(String id) {
+        EntityManager em = ThreadLocalContext.get().getEntityManager();
+        return em.find(GuestLoginRequest.class, id);
+    }
 }
