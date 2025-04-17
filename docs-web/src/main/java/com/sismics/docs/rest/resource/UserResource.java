@@ -413,16 +413,6 @@ public class UserResource extends BaseResource {
 
         // Get the user
         User user = null;
-        // UserDao userDao = new UserDao();
-        // if (Constants.GUEST_USER_ID.equals(username)) {
-        //     if (ConfigUtil.getConfigBooleanValue(ConfigType.GUEST_LOGIN)) {
-        //         // Login as guest
-        //         user = userDao.getActiveByUsername(Constants.GUEST_USER_ID);
-        //     }
-        // } else {
-            // Login as a normal user
-            // user = AuthenticationUtil.authenticate(username, password);
-        // }
         user = AuthenticationUtil.authenticate(username, password);
         if (user == null) {
             throw new ForbiddenClientException();
