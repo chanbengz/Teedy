@@ -99,6 +99,37 @@ angular.module('docs').controller('SettingsConfig', function($scope, $rootScope,
     });
   };
 
+  // Fetch guest login requests (admin only)
+  $scope.guestLoginRequests = [];
+  $scope.loadGuestLoginRequests = function () {
+    Restangular.one('user/guest_login_requests').get().then(function (data) {
+      $scope.guestLoginRequests = data.requests || [];
+    });
+  };
+  // Automatically load guest login requests if admin
+  if ($scope.isAdmin) {
+    $scope.loadGuestLoginRequests();
+  }
+
+  // Approve guest login request
+  $scope.approveGuestLoginRequest = function(req) {
+    Restangular.one('user').post('guest_login_request_approval', JSON.stringify({
+      id: req.id,
+      status: 'APPROVED'
+    }), undefined, { 'Content-Type': 'application/json;charset=utf-8' }).then(function() {
+      $scope.loadGuestLoginRequests();
+    });
+  };
+
+  // Reject guest login request
+  $scope.rejectGuestLoginRequest = function(req) {
+    Restangular.one('user').post('guest_login_request_approval', JSON.stringify({
+      id: req.id,
+      status: 'REJECTED'
+    }), undefined, { 'Content-Type': 'application/json;charset=utf-8' }).then(function() {
+      $scope.loadGuestLoginRequests();
+    });
+  };
   $scope.loadWebhooks();
 
   // Add a webhook

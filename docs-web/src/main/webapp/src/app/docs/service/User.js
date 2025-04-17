@@ -30,6 +30,13 @@ angular.module('docs').factory('User', function(Restangular) {
      */
     logout: function() {
       return Restangular.one('user').post('logout', {});
+    },
+    
+    /**
+     * Guest login request with random token.
+     */
+    guestLoginRequest: function(token) {
+      return Restangular.one('user').customPOST(JSON.stringify({ token: token }), 'guest_login_request', undefined, { 'Content-Type': 'application/json;charset=utf-8' });
     }
   }
 });

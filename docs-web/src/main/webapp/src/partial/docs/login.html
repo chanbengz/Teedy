@@ -74,7 +74,12 @@
             </div>
           </div>
 
-          <p class="text-center" ng-if="app.guest_login">&nbsp;</p>
+          <p class="text-center" ng-if="app.guest_login && guestLoginStatus === 1">
+            <span class="fas fa-spinner fa-spin"></span> {{ 'login.guest_pending_message' | translate }}
+          </p>
+          <p class="text-center" ng-if="app.guest_login && guestLoginStatus === 3">
+            <span class="fas fa-times-circle text-danger"></span> {{ 'login.guest_rejected_message' | translate }}
+          </p>
 
           <button type="submit" class="btn btn-default btn-block" ng-if="app.guest_login" ng-click="loginAsGuest()">
             <span class="fas fa-user"></span> {{ 'login.login_as_guest' | translate }}

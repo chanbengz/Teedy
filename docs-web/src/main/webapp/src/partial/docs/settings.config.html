@@ -10,6 +10,32 @@
   <button ng-if="!app.guest_login" class="btn btn-primary" ng-click="changeGuestLogin(true)">{{ 'settings.config.enable_guest_access' | translate }}</button>
   <button ng-if="app.guest_login" class="btn btn-danger" ng-click="changeGuestLogin(false)">{{ 'settings.config.disable_guest_access' | translate }}</button>
 </div>
+<div ng-if="isAdmin && guestLoginRequests.length">
+  <h2>Guest Login Requests</h2>
+  <table class="table table-bordered">
+    <thead>
+      <tr>
+        <th>Token</th>
+        <th>Timestamp</th>
+        <th>Status</th>
+        <th>IP</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr ng-repeat="req in guestLoginRequests">
+        <td>{{ req.token }}</td>
+        <td>{{ req.timestamp | date:'medium' }}</td>
+        <td>{{ req.status }}</td>
+        <td>{{ req.ip }}</td>
+        <td>
+          <button class="btn btn-success btn-xs" ng-if="req.status === 'PENDING'" ng-click="approveGuestLoginRequest(req)">Approve</button>
+          <button class="btn btn-danger btn-xs" ng-if="req.status === 'PENDING'" ng-click="rejectGuestLoginRequest(req)">Reject</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
 
 <h2 translate="settings.config.title_general"></h2>
 <form class="form-horizontal" name="generalForm" novalidate>

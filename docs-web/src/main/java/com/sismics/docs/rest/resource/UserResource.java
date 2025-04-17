@@ -31,6 +31,7 @@ import com.sismics.util.filter.TokenBasedSecurityFilter;
 import com.sismics.util.totp.GoogleAuthenticator;
 import com.sismics.util.totp.GoogleAuthenticatorKey;
 import jakarta.json.Json;
+import jakarta.json.JsonObject;
 import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonObjectBuilder;
 import jakarta.servlet.http.Cookie;
@@ -51,6 +52,125 @@ import java.util.Set;
  */
 @Path("/user")
 public class UserResource extends BaseResource {
+    /**
+     * Stores a guest login request with a random token.
+     * @api {post} /user/guest_login_request Store guest login request
+     * @apiName PostGuestLoginRequest
+     * @apiGroup User
+     * @apiParam {String} token Random token
+     * @apiSuccess {String} status Status OK
+     * @apiVersion 1.0.0
+     */
+    @POST
+    @Path("guest_login_request")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response guestLoginRequest(jakarta.json.JsonObject json) {
+        String token = json.getString("token", null);
+        if (token == null || token.length() < 8) {
+            throw new ClientException("ValidationError", "Token missing or too short");
+        }
+        String ip = request.getHeader("x-forwarded-for");
+        if (Strings.isNullOrEmpty(ip)) {
+            ip = request.getRemoteAddr();
+        }
+        GuestLoginRequestDao dao = new GuestLoginRequestDao();
+        GuestLoginRequest req = dao.findByToken(token);
+        if (req == null) {
+            // No request yet, create one
+            req = new GuestLoginRequest(token, ip);
+            dao.create(req);
+            return Response.ok().entity(Json.createObjectBuilder().add("status", 1).build()).build(); // 1 = pending
+        }
+        String status = req.getStatus();
+        int statusNum = 1; // pending
+        if ("PENDING".equals(status)) {
+            statusNum = 1;
+        } else if ("APPROVED".equals(status)) {
+            statusNum = 2;
+        } else if ("REJECTED".equals(status)) {
+            statusNum = 3;
+        }
+        JsonObjectBuilder builder = Json.createObjectBuilder().add("status", statusNum);
+        if (statusNum == 2) {
+            // Generate a login token for guest
+            UserDao userDao = new UserDao();
+            User user = userDao.getActiveByUsername(Constants.GUEST_USER_ID);
+            if (user != null) {
+                AuthenticationTokenDao authenticationTokenDao = new AuthenticationTokenDao();
+                AuthenticationToken authenticationToken = new AuthenticationToken()
+                    .setUserId(user.getId())
+                    .setLongLasted(false)
+                    .setIp(org.apache.commons.lang3.StringUtils.abbreviate(ip, 45))
+                    .setUserAgent(org.apache.commons.lang3.StringUtils.abbreviate(request.getHeader("user-agent"), 1000));
+                String authToken = authenticationTokenDao.create(authenticationToken);
+                builder.add("auth_token", authToken);
+            }
+        }
+        return Response.ok().entity(builder.build()).build();
+    }
+
+    /**
+     * Returns all guest login requests (admin only).
+     * @api {get} /user/guest_login_requests Get guest login requests
+     * @apiName GetGuestLoginRequests
+     * @apiGroup User
+     * @apiPermission admin
+     * @apiVersion 1.0.0
+     */
+    @GET
+    @Path("guest_login_requests")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getGuestLoginRequests() {
+        if (!authenticate()) {
+            throw new ForbiddenClientException();
+        }
+        checkBaseFunction(BaseFunction.ADMIN);
+        GuestLoginRequestDao dao = new GuestLoginRequestDao();
+        List<GuestLoginRequest> requests = dao.findAll();
+        JsonArrayBuilder arr = Json.createArrayBuilder();
+        for (GuestLoginRequest req : requests) {
+            arr.add(Json.createObjectBuilder()
+                .add("id", req.getId()) // Add ID for approval/rejection
+                .add("token", req.getToken())
+                .add("ip", req.getIp())
+                .add("timestamp", req.getTimestamp().getTime())
+                .add("status", req.getStatus()) // Add status for UI display
+            );
+        }
+        return Response.ok().entity(Json.createObjectBuilder().add("requests", arr).build()).build();
+    }
+
+    /**
+     * Approves or rejects a guest login request (admin only).
+     * @api {post} /user/guest_login_request_approval Approve/reject guest login request
+     * @apiName PostGuestLoginRequestApproval
+     * @apiGroup User
+     * @apiPermission admin
+     * @apiParam {String} id Guest login request ID
+     * @apiParam {String="APPROVED","REJECTED"} status Approval status
+     * @apiSuccess {String} status Status OK
+     * @apiVersion 1.0.0
+     */
+    @POST
+    @Path("guest_login_request_approval")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response approveGuestLoginRequest(JsonObject json) {
+        if (!authenticate()) {
+            throw new ForbiddenClientException();
+        }
+        checkBaseFunction(BaseFunction.ADMIN);
+        String id = json.getString("id", null);
+        String status = json.getString("status", null);
+        if (id == null || (!"APPROVED".equals(status) && !"REJECTED".equals(status))) {
+            throw new ClientException("ValidationError", "Invalid id or status");
+        }
+        GuestLoginRequestDao dao = new GuestLoginRequestDao();
+        dao.updateStatus(id, status);
+        return Response.ok().entity(Json.createObjectBuilder().add("status", "ok").build()).build();
+    }
+
     /**
      * Creates a new user.
      *
@@ -292,17 +412,8 @@ public class UserResource extends BaseResource {
         password = StringUtils.strip(password);
 
         // Get the user
-        UserDao userDao = new UserDao();
         User user = null;
-        if (Constants.GUEST_USER_ID.equals(username)) {
-            if (ConfigUtil.getConfigBooleanValue(ConfigType.GUEST_LOGIN)) {
-                // Login as guest
-                user = userDao.getActiveByUsername(Constants.GUEST_USER_ID);
-            }
-        } else {
-            // Login as a normal user
-            user = AuthenticationUtil.authenticate(username, password);
-        }
+        user = AuthenticationUtil.authenticate(username, password);
         if (user == null) {
             throw new ForbiddenClientException();
         }
