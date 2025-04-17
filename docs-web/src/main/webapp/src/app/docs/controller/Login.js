@@ -34,9 +34,9 @@ angular.module('docs').controller('Login', function(Restangular, $scope, $rootSc
       var status = resp.status;
       $scope.guestLoginStatus = status;
       if (status === 2 && resp.auth_token) {
-        // Accepted, perform login with received token
-        $scope.user = { username: 'guest', password: '' };
-        $scope.login();
+        // Accepted, set auth_token as cookie and redirect to main page
+        document.cookie = "auth_token=" + resp.auth_token + "; path=/";
+        $state.go('document.default');
       } else if (status === 3) {
         // Rejected
         var title = $translate.instant('login.guest_rejected_title');
