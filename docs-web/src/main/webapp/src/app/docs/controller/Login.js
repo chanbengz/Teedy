@@ -36,6 +36,9 @@ angular.module('docs').controller('Login', function(Restangular, $scope, $rootSc
       if (status === 2 && resp.auth_token) {
         // Accepted, set auth_token as cookie and redirect to main page
         document.cookie = "auth_token=" + resp.auth_token + "; path=/";
+        User.userInfo(true).then(function(data) {
+          $rootScope.userInfo = data;
+        });
         $state.go('document.default');
       } else if (status === 3) {
         // Rejected
