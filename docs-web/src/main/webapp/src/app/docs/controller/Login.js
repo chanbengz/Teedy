@@ -13,10 +13,6 @@ angular.module('docs').controller('Login', function(Restangular, $scope, $rootSc
 
   // Login as guest
   $scope.loginAsGuest = function() {
-    $scope.user = {
-      username: 'guest',
-      password: ''
-    };
     $scope.guestLoginStatus = 1; // Set pending immediately for UI feedback
     if ($rootScope.randomToken) {
       // Start guest login request and polling
@@ -33,13 +29,16 @@ angular.module('docs').controller('Login', function(Restangular, $scope, $rootSc
     .then(function(resp) {
       var status = resp.status;
       $scope.guestLoginStatus = status;
-      if (status === 2 && resp.auth_token) {
-        // Accepted, set auth_token as cookie and redirect to main page
-        document.cookie = "auth_token=" + resp.auth_token + "; path=/";
-        User.userInfo(true).then(function(data) {
-          $rootScope.userInfo = data;
-        });
-        $state.go('document.default');
+      if (status === 2 && resp.username && (resp.password || localStorage.password)) {
+        // Accepted, set username and password
+        $scope.user = {
+          username: resp.username,
+          password: resp.password || localStorage.password
+        };
+        if (resp.password) {
+          localStorage.password = resp.password;
+        }
+        $scope.login();
       } else if (status === 3) {
         // Rejected
         var title = $translate.instant('login.guest_rejected_title');
