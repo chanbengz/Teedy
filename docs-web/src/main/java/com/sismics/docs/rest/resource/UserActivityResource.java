@@ -137,6 +137,115 @@ public class UserActivityResource extends BaseResource {
     }
     
     /**
+     * Returns user activities for the current user.
+     *
+     * @api {get} /useractivity/user Get current user's activities
+     * @apiName GetUserActivitiesForCurrentUser
+     * @apiGroup UserActivity
+     * @apiParam {String} [activity_type] Activity type filter
+     * @apiParam {String} [entity_id] Entity ID filter (document, file, etc.)
+     * @apiParam {Number} [limit] Maximum number of activities to return
+     * @apiParam {Number} [offset] First activity to return
+     * @apiParam {String} [sort_column] Column to sort by
+     * @apiParam {Boolean} [asc] If true, sort in ascending order
+     * @apiSuccess {Object[]} activities List of activities
+     * @apiSuccess {String} activities.id Activity ID
+     * @apiSuccess {String} activities.user_id User ID
+     * @apiSuccess {String} activities.username Username
+     * @apiSuccess {String} activities.activity_type Activity type
+     * @apiSuccess {String} activities.entity_id Entity ID
+     * @apiSuccess {String} activities.entity_name Entity name
+     * @apiSuccess {Number} activities.progress Progress percentage (0-100)
+     * @apiSuccess {Number} activities.planned_date_timestamp Planned date timestamp (optional)
+     * @apiSuccess {Number} activities.completed_date_timestamp Completed date timestamp (optional)
+     * @apiSuccess {Number} activities.create_timestamp Creation date timestamp
+     * @apiSuccess {Number} total Total number of activities
+     * @apiPermission user
+     * @apiVersion 1.0.0
+     * 
+     * @param limit Maximum number of activities to return
+     * @param offset First activity to return
+     * @param sortColumn Column to sort by
+     * @param asc If true, sort in ascending order
+     * @param activityType Activity type filter
+     * @param entityId Entity ID filter
+     * @return Response
+     */
+    @GET
+    @Path("user")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getCurrentUserActivities(
+            @QueryParam("limit") Integer limit,
+            @QueryParam("offset") Integer offset,
+            @QueryParam("sort_column") Integer sortColumn,
+            @QueryParam("asc") Boolean asc,
+            @QueryParam("activity_type") String activityType,
+            @QueryParam("entity_id") String entityId) {
+        if (!authenticate()) {
+            throw new ForbiddenClientException();
+        }
+        
+        // Initialize the sort criteria
+        SortCriteria sortCriteria = new SortCriteria(sortColumn, asc);
+        
+        // Initialize the criteria
+        UserActivityCriteria criteria = new UserActivityCriteria();
+        criteria.setUserId(principal.getId()); // Always filter by current user
+        
+        if (activityType != null) {
+            criteria.setActivityType(activityType);
+        }
+        if (entityId != null) {
+            criteria.setEntityId(entityId);
+        }
+        
+        // Get the activities
+        PaginatedList<UserActivityDto> paginatedList = PaginatedLists.create(limit, offset);
+        UserActivityDao userActivityDao = new UserActivityDao();
+        userActivityDao.findByCriteria(paginatedList, criteria, sortCriteria);
+
+        // Build the response
+        JsonObjectBuilder response = Json.createObjectBuilder();
+        JsonArrayBuilder activities = Json.createArrayBuilder();
+
+        for (UserActivityDto userActivityDto : paginatedList.getResultList()) {
+            JsonObjectBuilder activity = Json.createObjectBuilder()
+                    .add("id", userActivityDto.getId())
+                    .add("user_id", userActivityDto.getUserId())
+                    .add("username", userActivityDto.getUsername())
+                    .add("activity_type", userActivityDto.getActivityType())
+                    .add("progress", userActivityDto.getProgress());
+            
+            if (userActivityDto.getEntityId() != null) {
+                activity.add("entity_id", userActivityDto.getEntityId());
+            }
+            
+            if (userActivityDto.getEntityName() != null) {
+                activity.add("entity_name", userActivityDto.getEntityName());
+            }
+            
+            if (userActivityDto.getPlannedDateTimestamp() != null) {
+                activity.add("planned_date_timestamp", userActivityDto.getPlannedDateTimestamp());
+            }
+            
+            if (userActivityDto.getCompletedDateTimestamp() != null) {
+                activity.add("completed_date_timestamp", userActivityDto.getCompletedDateTimestamp());
+            }
+            
+            if (userActivityDto.getCreateTimestamp() != null) {
+                activity.add("create_timestamp", userActivityDto.getCreateTimestamp());
+            }
+            
+            activities.add(activity);
+        }
+        
+        response.add("activities", activities)
+                .add("total", paginatedList.getResultCount());
+        
+        return Response.ok().entity(response.build()).build();
+    }
+    
+    /**
      * Create or update a user activity.
      *
      * @api {put} /useractivity Create or update a user activity
@@ -251,7 +360,7 @@ public class UserActivityResource extends BaseResource {
      * @apiParam {String} id Activity ID
      * @apiSuccess {String} status Status OK
      * @apiError (client) ForbiddenError Access denied
-     * @apiError (client) ActivityNotFound Activity not found
+     * @apiError (client) NotFound Activity not found
      * @apiPermission user
      * @apiVersion 1.0.0
      * 
@@ -266,25 +375,23 @@ public class UserActivityResource extends BaseResource {
             throw new ForbiddenClientException();
         }
         
-        // Get the authenticated user
-        String userId = principal.getId();
-        
-        // Get the user activity
+        // Get the activity
         UserActivityDao userActivityDao = new UserActivityDao();
         UserActivity userActivity = userActivityDao.getById(id);
+        
         if (userActivity == null) {
-            throw new ClientException("ActivityNotFound", "Activity not found");
+            throw new ClientException("NotFound", "Activity not found");
         }
         
-        // Check if this user activity belongs to the current user
-        if (!userActivity.getUserId().equals(userId) && !hasBaseFunction(BaseFunction.ADMIN)) {
+        // Check if the current user has admin rights or is the owner of the activity
+        if (!principal.getId().equals(userActivity.getUserId()) && !hasBaseFunction(BaseFunction.ADMIN)) {
             throw new ForbiddenClientException();
         }
         
-        // Delete the user activity
+        // Delete the activity
         userActivityDao.delete(id);
         
-        // Always return OK
+        // Always return OK status
         JsonObjectBuilder response = Json.createObjectBuilder()
                 .add("status", "ok");
         

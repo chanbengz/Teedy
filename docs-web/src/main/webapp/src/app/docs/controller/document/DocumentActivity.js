@@ -12,7 +12,7 @@ angular.module('docs').controller('DocumentActivity', function($scope, $statePar
   
   // Load existing activity for this document
   $scope.loadActivity = function() {
-    Restangular.one('useractivity')
+    Restangular.one('useractivity/user')
       .get({
         entity_id: $stateParams.id,
         limit: 1
