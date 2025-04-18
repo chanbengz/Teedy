@@ -26,8 +26,24 @@ angular.module('docs').controller('DocumentActivity', function($scope, $statePar
           
           // Format the planned date for the datepicker
           if (data.activities[0].planned_date_timestamp) {
-            var planned = new Date(data.activities[0].planned_date_timestamp);
-            $scope.activity.planned_date = planned.toISOString().substring(0, 10);
+            try {
+              var timestamp = data.activities[0].planned_date_timestamp;
+              var planned;
+              
+              // Handle string or number timestamp
+              if (typeof timestamp === 'string') {
+                planned = new Date(parseInt(timestamp, 10));
+              } else {
+                planned = new Date(timestamp);
+              }
+              
+              // Check if valid date
+              if (!isNaN(planned.getTime())) {
+                $scope.activity.planned_date = planned.toISOString().substring(0, 10);
+              }
+            } catch(e) {
+              console.error("Error parsing planned date:", e);
+            }
           }
         }
       });
@@ -38,6 +54,14 @@ angular.module('docs').controller('DocumentActivity', function($scope, $statePar
     // Make a copy of the activity and add the document ID
     var activity = angular.copy($scope.activity);
     activity.entity_id = $stateParams.id;
+    
+    // Convert planned_date from datepicker format to timestamp
+    if (activity.planned_date) {
+      var plannedDate = new Date(activity.planned_date);
+      if (!isNaN(plannedDate.getTime())) {
+        activity.planned_date_timestamp = plannedDate.getTime();
+      }
+    }
     
     // Save or update the activity
     Restangular.one('useractivity').put(activity).then(function(data) {

@@ -372,7 +372,31 @@ angular.module('docs').controller('SettingsActivity', function($scope, $state, R
    */
   $scope.formatDate = function(timestamp) {
     if (!timestamp) return '';
-    return new Date(timestamp).toLocaleDateString();
+    
+    // Handle timestamp that might be a number or a string
+    var date;
+    try {
+      // Try to create a date directly
+      date = new Date(timestamp);
+      
+      // Verify the date is valid
+      if (isNaN(date.getTime())) {
+        // Try parsing as integer if it's a string timestamp
+        date = new Date(parseInt(timestamp, 10));
+      }
+      
+      // If still invalid, return empty string
+      if (isNaN(date.getTime())) {
+        console.warn("Invalid date timestamp:", timestamp);
+        return '';
+      }
+      
+      // Format the date using browser locale
+      return date.toLocaleDateString();
+    } catch(e) {
+      console.error("Error formatting date:", e);
+      return '';
+    }
   };
 
   /**
