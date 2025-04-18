@@ -39,8 +39,45 @@ public class QueryUtil {
     public static QueryParam getSortedQueryParam(QueryParam queryParam, SortCriteria sortCriteria) {
         StringBuilder sb = new StringBuilder(queryParam.getQueryString());
         if (sortCriteria != null) {
-            sb.append(" order by c");
-            sb.append(sortCriteria.getColumn());
+            // Map column index to actual column names for PostgreSQL compatibility
+            String orderColumn;
+            switch (sortCriteria.getColumn()) {
+                case 0:
+                    orderColumn = "ua.UTA_ID_C";
+                    break;
+                case 1:
+                    orderColumn = "ua.UTA_IDUSER_C";
+                    break;
+                case 2:
+                    orderColumn = "u.USE_USERNAME_C";
+                    break;
+                case 3:
+                    orderColumn = "ua.UTA_ACTIVITY_TYPE_C";
+                    break;
+                case 4:
+                    orderColumn = "ua.UTA_ENTITY_ID_C";
+                    break;
+                case 5:
+                    orderColumn = "d.DOC_TITLE_C";
+                    break;
+                case 6:
+                    orderColumn = "ua.UTA_PROGRESS_N";
+                    break;
+                case 7:
+                    orderColumn = "ua.UTA_PLANNED_DATE_D";
+                    break;
+                case 8:
+                    orderColumn = "ua.UTA_COMPLETED_DATE_D";
+                    break;
+                case 9:
+                    orderColumn = "ua.UTA_CREATEDATE_D";
+                    break;
+                default:
+                    orderColumn = "ua.UTA_CREATEDATE_D";
+            }
+            
+            sb.append(" order by ");
+            sb.append(orderColumn);
             sb.append(sortCriteria.isAsc() ? " asc" : " desc");
         }
         
