@@ -313,7 +313,6 @@
     "user_activities": {
       "title": "User Activity Dashboard",
       "subtitle": "Manage user activities and view progress in Gantt Chart",
-      "chart_title": "User Progress Overview",
       "list_title": "User Activities",
       "no_data": "No activity data available to display chart.",
       "no_activities": "No activities found.",
@@ -334,7 +333,17 @@
         "completed": "Completed",
         "in_progress": "In Progress",
         "not_started": "Not Started"
-      }
+      },
+      "controls": "Activity Controls",
+      "gantt_view": "Gantt View",
+      "list_view": "List View",
+      "filter_user": "Filter by User",
+      "filter_type": "Filter by Type",
+      "all_users": "All Users",
+      "all_types": "All Types",
+      "apply_filters": "Apply Filters",
+      "reset_filters": "Reset Filters",
+      "gantt_chart": "Activity Gantt Chart"
     },
     "ldap": {
       "title": "LDAP authentication",

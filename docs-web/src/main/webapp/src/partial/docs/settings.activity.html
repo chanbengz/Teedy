@@ -5,31 +5,116 @@
   </div>
 </div>
 
-<!-- Gantt Chart -->
+<!-- View Toggle and Filters -->
 <div class="row">
   <div class="col-md-12">
     <div class="panel panel-default">
-      <div class="panel-heading">
-        <h3 class="panel-title">{{ 'settings.user_activities.chart_title' | translate }}</h3>
+      <div class="panel-heading clearfix">
+        <div class="btn-group pull-right">
+          <button type="button" class="btn btn-sm" ng-class="{'btn-primary': showGantt, 'btn-default': !showGantt}" ng-click="toggleView()">
+            <span class="fas fa-tasks"></span> {{ 'settings.user_activities.gantt_view' | translate }}
+          </button>
+          <button type="button" class="btn btn-sm" ng-class="{'btn-primary': !showGantt, 'btn-default': showGantt}" ng-click="toggleView()">
+            <span class="fas fa-list"></span> {{ 'settings.user_activities.list_view' | translate }}
+          </button>
+        </div>
+        <h3 class="panel-title">
+          {{ 'settings.user_activities.controls' | translate }}
+        </h3>
       </div>
       <div class="panel-body">
-        <div ng-if="chartData.labels.length === 0" class="text-center">
-          <p class="text-muted">{{ 'settings.user_activities.no_data' | translate }}</p>
+        <div class="row">
+          <div class="col-md-5">
+            <div class="form-group">
+              <label for="userFilter">{{ 'settings.user_activities.filter_user' | translate }}</label>
+              <select id="userFilter" class="form-control" ng-model="filterUser">
+                <option value="">{{ 'settings.user_activities.all_users' | translate }}</option>
+                <option ng-repeat="user in availableUsers" value="{{ user.id }}">{{ user.name }}</option>
+              </select>
+            </div>
+          </div>
+          <div class="col-md-5">
+            <div class="form-group">
+              <label for="typeFilter">{{ 'settings.user_activities.filter_type' | translate }}</label>
+              <select id="typeFilter" class="form-control" ng-model="filterType">
+                <option value="">{{ 'settings.user_activities.all_types' | translate }}</option>
+                <option ng-repeat="type in availableTypes" value="{{ type.id }}">{{ type.name }}</option>
+              </select>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="form-group">
+              <label>&nbsp;</label>
+              <div>
+                <button type="button" class="btn btn-primary" ng-click="applyFilters()">
+                  <span class="fas fa-filter"></span> {{ 'settings.user_activities.apply_filters' | translate }}
+                </button>
+                <button type="button" class="btn btn-default" ng-click="resetFilters()">
+                  <span class="fas fa-times"></span> {{ 'settings.user_activities.reset_filters' | translate }}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
-        <canvas ng-if="chartData.labels.length > 0" id="activityChart" class="chart chart-bar" 
-          chart-data="chartData.datasets" 
-          chart-labels="chartData.labels" 
-          chart-options="chartOptions"
-          chart-dataset-override="chartData.datasets"
-          chart-colors="chartData.colors">
-        </canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Gantt Chart -->
+<div class="row" ng-if="showGantt">
+  <div class="col-md-12">
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <h3 class="panel-title">{{ 'settings.user_activities.gantt_chart' | translate }}</h3>
+      </div>
+      <div class="panel-body">
+        <div ng-if="loadingActivities" class="text-center">
+          <span class="fas fa-spinner fa-spin"></span> {{ 'settings.user_activities.loading' | translate }}
+        </div>
+        
+        <div ng-if="!loadingActivities && ganttData.data.length === 0" class="text-center">
+          <p class="text-muted">{{ 'settings.user_activities.no_activities' | translate }}</p>
+        </div>
+        
+        <div ng-if="!loadingActivities && ganttData.data.length > 0" class="gantt-chart-container">
+          <!-- Gantt Chart Header -->
+          <div class="gantt-header">
+            <div class="gantt-header-title">{{ 'settings.user_activities.user' | translate }}</div>
+            <div class="gantt-header-timeline">
+              <div class="gantt-timeline-scale">
+                <!-- Generate timeline dates -->
+                <div class="gantt-timeline-cell" ng-repeat="date in getTimelineDates(ganttData.timeScale.from, ganttData.timeScale.to)">
+                  {{ date | date:'shortDate' }}
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Gantt Chart Body -->
+          <div class="gantt-body">
+            <!-- For each user -->
+            <div class="gantt-row" ng-repeat="row in ganttData.data">
+              <div class="gantt-row-title">{{ row.name }}</div>
+              <div class="gantt-row-timeline">
+                <!-- Task bars -->
+                <div class="gantt-task" 
+                     ng-repeat="task in row.tasks" 
+                     ng-style="getTaskStyle(task, ganttData.timeScale)">
+                  <div class="gantt-task-progress" ng-style="{'width': task.progress + '%', 'background-color': task.color}"></div>
+                  <div class="gantt-task-content">{{ task.name }} ({{ task.progress }}%)</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
 <!-- Activity List -->
-<div class="row">
+<div class="row" ng-if="!showGantt">
   <div class="col-md-12">
     <div class="panel panel-default">
       <div class="panel-heading">
@@ -61,7 +146,7 @@
             <tbody>
               <tr ng-repeat="activity in activities">
                 <td>{{ activity.username }}</td>
-                <td>{{ activity.activity_type }}</td>
+                <td>{{ formatActivityType(activity.activity_type) }}</td>
                 <td>
                   <span ng-if="activity.entity_name">{{ activity.entity_name }}</span>
                   <span ng-if="!activity.entity_name && activity.entity_id" class="text-muted">{{ activity.entity_id }}</span>
@@ -103,4 +188,124 @@
       </div>
     </div>
   </div>
-</div> 
+</div>
+
+<!-- CSS Styles for Gantt Chart -->
+<style>
+  .gantt-chart-container {
+    overflow-x: auto;
+    position: relative;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    margin-top: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+  
+  .gantt-header, .gantt-row {
+    display: flex;
+    min-width: 1200px;
+  }
+  
+  .gantt-header {
+    background-color: #f9f9f9;
+    border-bottom: 2px solid #e0e0e0;
+  }
+  
+  .gantt-header-title, .gantt-row-title {
+    flex: 0 0 200px;
+    padding: 10px;
+    background-color: #f5f5f5;
+    border-right: 1px solid #ddd;
+    font-weight: bold;
+  }
+  
+  /* Ensure row title aligns with the first task */
+  .gantt-row-title {
+    display: flex;
+    align-items: flex-start;
+    padding-top: 15px;
+    height: 100%;
+    border-bottom: 1px solid #eee;
+    background-color: #fdfdfd;
+  }
+  
+  .gantt-header-timeline, .gantt-row-timeline {
+    flex: 1;
+    position: relative;
+    min-height: 50px;
+    border-bottom: 1px solid #eee;
+  }
+  
+  /* Update row height to accommodate stacked tasks */
+  .gantt-row-timeline {
+    min-height: 140px; /* Increased height to fit multiple stacked tasks */
+    background-image: linear-gradient(90deg, rgba(0,0,0,0.02) 1px, transparent 1px);
+    background-size: calc(100% / 15) 100%;  /* Divide by number of dates shown */
+  }
+  
+  .gantt-timeline-scale {
+    display: flex;
+    border-bottom: 1px solid #ddd;
+    background-color: #f9f9f9;
+    height: 40px;
+  }
+  
+  .gantt-timeline-cell {
+    flex: 1;
+    text-align: center;
+    padding: 10px 5px;
+    border-right: 1px solid #eee;
+    font-size: 12px;
+    color: #555;
+    font-weight: 500;
+  }
+  
+  .gantt-task {
+    position: absolute;
+    height: 30px;
+    border-radius: 4px;
+    background-color: #f8f8f8;
+    border: 1px solid #ddd;
+    box-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+    overflow: hidden;
+    z-index: 1; /* Ensure tasks are above grid lines */
+    margin-right: 4px; /* Add margin between tasks */
+    min-width: 80px; /* Ensure small tasks have reasonable width */
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+  }
+  
+  .gantt-task:hover {
+    box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+    transform: translateY(-1px);
+    z-index: 2;
+  }
+  
+  .gantt-task-progress {
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    opacity: 0.8; /* Slightly more opaque */
+  }
+  
+  .gantt-task-content {
+    position: relative;
+    z-index: 1;
+    padding: 5px 8px; /* Increased horizontal padding */
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 500; /* Slightly bolder text */
+    text-shadow: 0px 0px 2px rgba(255,255,255,0.7); /* Text shadow for better readability */
+  }
+  
+  /* Fix for button alignment */
+  .panel-heading .btn-group {
+    margin-top: -2px;
+  }
+  
+  .panel-heading .btn-group .btn {
+    margin-left: 5px;
+  }
+</style> 
