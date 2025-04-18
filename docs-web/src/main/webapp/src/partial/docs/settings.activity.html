@@ -1,0 +1,106 @@
+<div class="row">
+  <div class="col-md-12">
+    <h2>{{ 'settings.user_activities.title' | translate }}</h2>
+    <p class="text-muted">{{ 'settings.user_activities.subtitle' | translate }}</p>
+  </div>
+</div>
+
+<!-- Gantt Chart -->
+<div class="row">
+  <div class="col-md-12">
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <h3 class="panel-title">{{ 'settings.user_activities.chart_title' | translate }}</h3>
+      </div>
+      <div class="panel-body">
+        <div ng-if="chartData.labels.length === 0" class="text-center">
+          <p class="text-muted">{{ 'settings.user_activities.no_data' | translate }}</p>
+        </div>
+        <canvas ng-if="chartData.labels.length > 0" id="activityChart" class="chart chart-bar" 
+          chart-data="chartData.datasets" 
+          chart-labels="chartData.labels" 
+          chart-options="chartOptions"
+          chart-dataset-override="chartData.datasets"
+          chart-colors="chartData.colors">
+        </canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Activity List -->
+<div class="row">
+  <div class="col-md-12">
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <h3 class="panel-title">{{ 'settings.user_activities.list_title' | translate }}</h3>
+      </div>
+      <div class="panel-body">
+        <div ng-if="loadingActivities" class="text-center">
+          <span class="fas fa-spinner fa-spin"></span> {{ 'settings.user_activities.loading' | translate }}
+        </div>
+        
+        <div ng-if="!loadingActivities && activities.length === 0" class="text-center">
+          <p class="text-muted">{{ 'settings.user_activities.no_activities' | translate }}</p>
+        </div>
+        
+        <div ng-if="!loadingActivities && activities.length > 0" class="table-responsive">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>{{ 'settings.user_activities.user' | translate }}</th>
+                <th>{{ 'settings.user_activities.activity_type' | translate }}</th>
+                <th>{{ 'settings.user_activities.entity' | translate }}</th>
+                <th>{{ 'settings.user_activities.progress' | translate }}</th>
+                <th>{{ 'settings.user_activities.planned_date' | translate }}</th>
+                <th>{{ 'settings.user_activities.completed_date' | translate }}</th>
+                <th>{{ 'settings.user_activities.created_date' | translate }}</th>
+                <th>{{ 'settings.user_activities.actions' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr ng-repeat="activity in activities">
+                <td>{{ activity.username }}</td>
+                <td>{{ activity.activity_type }}</td>
+                <td>
+                  <span ng-if="activity.entity_name">{{ activity.entity_name }}</span>
+                  <span ng-if="!activity.entity_name && activity.entity_id" class="text-muted">{{ activity.entity_id }}</span>
+                  <span ng-if="!activity.entity_name && !activity.entity_id">-</span>
+                </td>
+                <td>
+                  <div class="progress" style="margin-bottom: 0;">
+                    <div class="progress-bar {{ getProgressClass(activity.progress) }}" 
+                         role="progressbar" 
+                         aria-valuenow="{{ activity.progress }}" 
+                         aria-valuemin="0" 
+                         aria-valuemax="100" 
+                         ng-style="{ 'width': activity.progress + '%' }">
+                      {{ activity.progress }}%
+                    </div>
+                  </div>
+                  <span class="small">{{ formatProgress(activity.progress) }}</span>
+                </td>
+                <td>{{ formatDate(activity.planned_date_timestamp) }}</td>
+                <td>{{ formatDate(activity.completed_date_timestamp) }}</td>
+                <td>{{ formatDate(activity.create_timestamp) }}</td>
+                <td>
+                  <button type="button" class="btn btn-danger btn-xs" ng-click="deleteActivity(activity)">
+                    <span class="fas fa-trash"></span> {{ 'settings.user_activities.delete' | translate }}
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          
+          <!-- Pagination -->
+          <div class="text-center" ng-if="total > activities.length">
+            <button class="btn btn-default" ng-click="loadMore()">
+              <span class="fas fa-plus"></span> {{ 'settings.user_activities.load_more' | translate }}
+            </button>
+            <span class="text-muted">{{ activities.length }} {{ 'settings.user_activities.of' | translate }} {{ total }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div> 
