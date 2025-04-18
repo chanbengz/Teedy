@@ -751,3 +751,100 @@ input[readonly].share-link {
   padding-left: 0;
   padding-right: 0;
 }
+
+// Progress bar improvements
+.progress {
+  position: relative;
+  
+  .progress-bar {
+    min-width: 2em; // Ensure there's enough room for percent text
+    text-align: center;
+    
+    &[style*="width: 0%"] {
+      color: #333; // Make text visible when bar is too narrow
+      min-width: 0;
+      padding-left: 5px;
+    }
+  }
+}
+
+// Document activity specific styling
+.document-activity-form {
+  .progress {
+    height: 24px;
+    margin-bottom: 10px;
+    
+    .progress-bar {
+      line-height: 24px;
+      font-size: 14px;
+      text-align: center;
+    }
+  }
+  
+  .help-block {
+    margin-top: 5px;
+    font-weight: 500;
+    display: block;
+    line-height: 1.5;
+  }
+  
+  .control-label {
+    padding-top: 7px;
+    margin-bottom: 0;
+    text-align: right;
+  }
+  
+  .form-group {
+    margin-bottom: 15px;
+    display: flex;
+  }
+  
+  .col-sm-9 {
+    position: relative;
+  }
+  
+  .text-success {
+    display: inline-block;
+    vertical-align: middle;
+    line-height: 34px;
+  }
+  
+  input[type="range"] {
+    height: 34px;
+    padding: 6px 0;
+    cursor: pointer;
+    
+    &:focus {
+      outline: none;
+    }
+  }
+  
+  .status-container {
+    min-height: 22px;
+    margin-top: 5px;
+    
+    .help-block {
+      margin: 0;
+    }
+  }
+}
+
+// Settings activity list styling 
+.settings-activity-list {
+  .progress {
+    height: 18px;
+    margin-bottom: 5px;
+    
+    .progress-bar {
+      line-height: 18px;
+      font-size: 12px;
+    }
+  }
+  
+  .small {
+    display: block;
+    margin-top: 3px;
+    font-weight: 500;
+    color: #555;
+  }
+}

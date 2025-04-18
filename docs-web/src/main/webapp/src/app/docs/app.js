@@ -7,7 +7,7 @@ angular.module('docs',
     // Dependencies
     ['ui.router', 'ui.bootstrap', 'dialog', 'ngProgress', 'monospaced.qrcode', 'yaru22.angular-timeago', 'ui.validate',
       'ui.sortable', 'restangular', 'ngSanitize', 'ngTouch', 'colorpicker.module', 'ngFileUpload', 'pascalprecht.translate',
-      'tmh.dynamicLocale', 'ngOnboarding']
+      'tmh.dynamicLocale', 'ngOnboarding', 'chart.js']
   )
 
 /**
@@ -250,6 +250,15 @@ angular.module('docs',
         'settings': {
           templateUrl: 'partial/docs/settings.ldap.html',
           controller: 'SettingsLdap'
+        }
+      }
+    })
+    .state('settings.activity', {
+      url: '/activity',
+      views: {
+        'settings': {
+          templateUrl: 'partial/docs/settings.activity.html',
+          controller: 'SettingsActivity'
         }
       }
     })

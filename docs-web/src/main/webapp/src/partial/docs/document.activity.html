@@ -1,0 +1,64 @@
+<div class="panel panel-default" ng-controller="DocumentActivity">
+  <div class="panel-heading">
+    <h3 class="panel-title">
+      <span class="fas fa-tasks"></span> {{ 'document.activity.title' | translate }}
+    </h3>
+  </div>
+  <div class="panel-body">
+    <form class="form-horizontal document-activity-form">
+      <div class="form-group">
+        <label class="col-sm-3 control-label" for="activityType">{{ 'document.activity.activity_type' | translate }}</label>
+        <div class="col-sm-9">
+          <select id="activityType" class="form-control" ng-model="activity.activity_type">
+            <option value="document_review">{{ 'document.activity.document_review' | translate }}</option>
+            <option value="document_edit">{{ 'document.activity.document_edit' | translate }}</option>
+            <option value="document_approval">{{ 'document.activity.document_approval' | translate }}</option>
+            <option value="document_publishing">{{ 'document.activity.document_publishing' | translate }}</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label class="col-sm-3 control-label" for="progressRange">{{ 'document.activity.progress' | translate }}</label>
+        <div class="col-sm-9">
+          <div class="progress" style="height: 24px; margin-bottom: 10px;">
+            <div class="progress-bar {{ getProgressClass(activity.progress) }}" 
+                 role="progressbar" 
+                 aria-valuenow="{{ activity.progress }}" 
+                 aria-valuemin="0" 
+                 aria-valuemax="100" 
+                 ng-style="{ 'width': activity.progress + '%' }"
+                 style="min-width: 40px; line-height: 24px; font-size: 14px; text-align: center;">
+              {{ activity.progress }}%
+            </div>
+          </div>
+          <input id="progressRange" type="range" class="form-control" ng-model="activity.progress" min="0" max="100" step="10" style="margin-bottom: 8px;" />
+          <div class="status-container" style="min-height: 22px;">
+            <span class="help-block" style="margin-top: 0; font-weight: 500; display: block; line-height: 1.5;">{{ formatProgress(activity.progress) }}</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label class="col-sm-3 control-label" for="plannedDate">{{ 'document.activity.planned_completion' | translate }}</label>
+        <div class="col-sm-9">
+          <input id="plannedDate" type="date" class="form-control" ng-model="activity.planned_date" />
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <div class="col-sm-offset-3 col-sm-9">
+          <div style="display: flex; align-items: center;">
+            <button type="button" class="btn btn-primary" ng-click="saveActivity()">
+              <span class="fas fa-save"></span> {{ 'document.activity.save_progress' | translate }}
+            </button>
+            
+            <span class="text-success" ng-if="activitySaved" style="margin-left: 15px; display: inline-block; vertical-align: middle; line-height: 34px;">
+              <span class="fas fa-check"></span> {{ 'document.activity.progress_saved' | translate }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div> 
