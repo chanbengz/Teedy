@@ -33,8 +33,7 @@ pipeline {
         }
         stage('Site') {
             steps {
-                sh 'mvn site'
-		sh 'mvn site:stage;
+                sh 'mvn site && mvn site:stage'
             }
         }
         stage('Package') {
@@ -48,7 +47,6 @@ pipeline {
             archiveArtifacts artifacts: '**/target/site/**/*.*', fingerprint: true
             archiveArtifacts artifacts: '**/target/**/*.jar', fingerprint: true
             archiveArtifacts artifacts: '**/target/**/*.war', fingerprint: true
-            junit '**/target/surefire-reports/*.xml'
         }
     }
 }
