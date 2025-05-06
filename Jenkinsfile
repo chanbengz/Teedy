@@ -11,7 +11,7 @@ pipeline {
 	stage('Build') {
 	    steps {
 		checkout scmGit(
-		     branches: [[name: '*/master']],
+		     branches: [[name: '*/vanilla']],
 	 	     extensions: [],
 	 	     userRemoteConfigs: [[url: 'https://github.com/chanbengz/Teedy.git']]
 	 	)
@@ -30,7 +30,7 @@ pipeline {
 	stage('Upload image') {
 	    steps {
 		script {
-		    docker.withRegistry('https://registry.hub.docker.com', 'DOCKER_HUB_CREDENTIALS') {
+		    docker.withRegistry('https://crpi-0i4dp2dcpc0rbado.cn-shenzhen.personal.cr.aliyuncs.com', 'dockerhub_credentials') {
 		        docker.image("${env.DOCKER_IMAGE}:${env.DOCKER_TAG}").push()
 			docker.image("${env.DOCKER_IMAGE}:${env.DOCKER_TAG}").push('latest')
 		    }
