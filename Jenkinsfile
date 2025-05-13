@@ -4,7 +4,7 @@ pipeline {
     environment {
 	DOCKER_HUB_CREDENTIALS = credentials('dockerhub_credentials')
 	DOCKER_IMAGE = 'b3nch4n/teedy-app'
-	DOCKER_TAG = "${env.BUILD_NUMBER}"
+	DOCKER_TAG = "latest"
 	DEPLOYMENT_NAME = "teedy"
 	CONTAINER_NAME = "teedy-app"
     }
@@ -46,7 +46,7 @@ pipeline {
             steps {
                 sh '''
                     echo "Setting image for deployment..."
-                    kubectl set image deployment/${DEPLOYMENT_NAME} ${CONTAINER_NAME}=${IMAGE_NAME}
+                    kubectl set image deployment/${DEPLOYMENT_NAME} ${CONTAINER_NAME}=${DOCKER_IMAGE}:${DOCKER_TAG}
                 '''
                 }
         }

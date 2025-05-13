@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: teedy
+  labels:
+    name: teedy
+spec:
+  selector:
+    matchLabels:
+      name: teedy
+  template:
+    metadata:
+      labels:
+        name: teedy
+    spec:
+      containers:
+        - name: teedy-app
+          image: b3nch4n/teedy-app
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
