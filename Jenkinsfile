@@ -5,6 +5,8 @@ pipeline {
 	DOCKER_HUB_CREDENTIALS = credentials('dockerhub_credentials')
 	DOCKER_IMAGE = 'b3nch4n/teedy-app'
 	DOCKER_TAG = "${env.BUILD_NUMBER}"
+	DEPLOYMENT_NAME = "teedy"
+	CONTAINER_NAME = "teedy-app"
     }
 
     stages {
@@ -27,37 +29,33 @@ pipeline {
 	    }
 	}
 
-//	stage('Upload image') {
-//	    steps {
-//		script {
-//		    docker.withRegistry('https://crpi-0i4dp2dcpc0rbado.cn-shenzhen.personal.cr.aliyuncs.com', 'dockerhub_credentials') {
-//		        docker.image("${env.DOCKER_IMAGE}:${env.DOCKER_TAG}").push()
-//			docker.image("${env.DOCKER_IMAGE}:${env.DOCKER_TAG}").push('latest')
-//		    }
-//		}
-//	    }
-//	}
+        stage('Start Minikube'){
+            steps {
+                sh '''
+                    if ! minikube status | grep -q "Running"; then
+                        echo "Starting Minikube..."
+                        minikube start
+                    else
+                        echo "Minikube already running."
+                    fi
+                '''
+            }
+        }
 
-	stage('Run containers') {
-	    steps {
-		script {
-		    sh 'docker stop teedy-container-8081 || true'
-		    sh 'docker rm teedy-container-8081 || true'
+        stage('Set Image'){
+            steps {
+                sh '''
+                    echo "Setting image for deployment..."
+                    kubectl set image deployment/${DEPLOYMENT_NAME} ${CONTAINER_NAME}=${IMAGE_NAME}
+                '''
+                }
+        }
 
-		    docker.image("${env.DOCKER_IMAGE}:${env.DOCKER_TAG}").run(
-		        '--name teedy-container-8081 -d -p 8081:8080'
-		    )
-
-		    sh 'docker stop teedy-container-8082 || true'
-		    sh 'docker rm teedy-container-8082 || true'
-
-		    docker.image("${env.DOCKER_IMAGE}:${env.DOCKER_TAG}").run(
-		        '--name teedy-container-8082 -d -p 8082:8080'
-		    )
-
-		    sh 'docker ps --filter "name=teedy-container"'
-		}
-	    }
-	}
+        stage('Verify'){
+            steps {
+                sh 'kubectl rollout status deployment/${DEPLOYMENT_NAME}'
+                sh 'kubectl get pods'
+            }
+        }
     }
 }
